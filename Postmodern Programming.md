@@ -429,24 +429,24 @@ Further, there may well be problems that don’t lend themselves to a declarativ
 
 ## Epilogue: Abstraction in the Abstract
 
-There is a proverb about a man who points at the moon, and says “There is the moon.” You do not think he is talking about his finger, but about the thing he points at. Extending his finger is shorthand; it is a symbol, a stand-in, to avoid his having to take you to the moon and smack you over the head with it before you get the point. The moon is a concrete thing; his finger, and indeed the word “moon,” are abstractions. We can be even more abstract: other worlds have moons, too. _The_ moon is really just _a_ moon. This is my moon; there are many like it, but this one is mine.
+There is a proverb about a man who points at the moon, and says “There is the moon.” We do not think he is referring to his finger, and so the lesson is: “Do not mistake the pointing finger for the moon.”
 
-To abstract is to identify an idea, a concept, as a unique thing which can be reasoned and acted upon in isolation. It is to give it a name. It is to define that name with that concept. To add a definition to the dictionary.
+Really, his finger is a symbol, a stand-in, to avoid his having to take you to the moon and smack you over the head with it before you get the point. The moon is a concrete thing; his finger, and indeed the word “moon,” are abstractions. We can be even more abstract: other worlds have moons, too. _The_ moon is really just _a_ moon. This is my moon; there are many like it, but this one is mine.
 
-It’s hard to think about something which you do not have a word for. Sometimes we don’t have good enough words for things that are important to us: the feeling of growing up and taking responsibility for your life. The bittersweet experience of a trusted colleague and friend leaving to work on something important to them: that simultaneous grief at your loss and joy at their gain. Or how the joy outweighs the grief.
+To abstract is to identify an idea, a concept, as a unique thing which can be reasoned and acted upon in isolation. It is to give it a name; to define that name with that concept. This is equally true in language and in code.
 
-We know these things, but we don’t talk about them all that often. Perhaps we would do so more if we did have words for them. Perhaps it’s for the best that we don’t; but then, Hawking coining “spaghettification” for the experience of being sucked past the event horizon of a black hole has not had much effect on my conversations, for better or for worse.
+We abstract because it’s difficult to reason about something which we do not have a word for. Sometimes we don’t have good enough words for things that are important to us: the feeling of summer’s warmth passing as fall’s crispness enters the air; or of the bittersweet experience of a trusted colleague and friend leaving to work on something important to them: that simultaneous grief at your loss and joy at their gain. Or how the joy outweighs the grief.
 
-Therefore, we make words for things we need to think about. We name not just unique objects, or categories of objects, but also concepts. Sometimes these are new words, like zeitgeist or monad. These are _never_ new ideas, however: we cannot name an idea we have not had. Even if we are the first and only to think of an idea, the selection of the word must follow, never lead.
+We have these concepts, but it’s hard to think or talk about them without the symbols for them, the words. Abstracting gives us what we lack. We name unique objects, and categories of objects, and also concepts.
 
-No word is an island, of course; we use them together in sentences according to the grammar of our language. The concept of spaghettification in the abstract is much less useful if we can’t speak of the inevitable and redundant spaghettification of a delicious pasta dinner ejected into the galactic core.
+Sometimes these are new words, like _zeitgeist_ or _monad_. These are _never_ new ideas, however: we cannot name an idea we have not had. Even if we are the first and only to think of an idea, the selection of the word must follow, never lead. So it is with our software: we must always abstract from something we already know, and this is done most easily with working code.
 
-Naming things and phrasing are fairly innate to human beings. Of course, they’re not always easy.
+If abstraction is vocabulary, then composition is grammar: phrasing our abstractions together such that we can apply them to connote meaning (and behaviour!). Using this most effectively is going to require at least as much practice, hand-in-hand with abstraction: they are yin and yang, simultaneously candlestick and faces, negative space and figure.
 
-Some people are particularly good at the selection and combination of words. Writers and poets, lawyers and politicians, comedians and liars. Teachers, hopefully. And someday maybe presenters at conferences will be, too.
+So if it ain’t broke, you aren’t trying hard enough yet. It’s going to be hard and uncomfortable and it might make you unpopular if you do it at work right before a deadline, but it’s the only way to master the skills, and the only way to apply these skills once mastered to concepts you were previously unfamiliar with.
 
-But naming things? Abstraction, is that a skill? Absolutely it is. If you hurt your hand because you touch the flame, you do not learn only not to touch _this particular_ flame, but all flames; and from there, to _things that are hot_, and you might further abstract from this experience the important lesson to be more careful during chemistry class. Each abstraction is a leap from symbol to definition. Making these leaps is a skill. It can be _practiced_. You can make these leaps more readily, reflexively, and see where it takes you.
+By all means, therefore, make mistakes. Break things.
 
-Another part of this skill is developing your intuition for which leaps _should_ be made. You learned that when you got burnt, your hand became a bit more red where you were burnt, as your body works to heal itself. You probably don’t make the leap to assuming that everything which is burnt turns red and heals itself. Certainly this does not seem to be true of the match!
+Just do so on a branch.
 
 ## Q?&A!
