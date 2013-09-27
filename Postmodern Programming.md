@@ -409,6 +409,24 @@ There is no analogous cost to classes. We may feel like we incur some penalty to
 
 Ergo, more, simpler classes are “better”—in the sense of allowing “more declarative” solutions—than are fewer, more complex classes. And at this scale, we can use lines of code as a rule of thumb: longer classes are probably more complex, and are less likely to be adequately declarative.
 
+The `Memo` class we looked at earlier is fairly minimalistic. We could factor out the observation of dependencies—that’s orthogonal to the core invalidate/evaluate/value concept—but we see diminishing returns at some point; I might sneer at convenience, but ultimately it’s what pays Apple’s bills and mine, and as an API designer, developers are your users, and users are people too!
+
+In the end, you have to ship. Experimenting with these ideas will not help you ship on Monday. Experimenting with these ideas will not help you ship next week. Probably not next month. But three to six months from now, having this experimentation behind you, having experience with these ideas in your repertoire, it absolutely will.
+
+Declarative code is simpler. It’s usually easier to read, in my experience. It’s smaller, it’s easy to get around, it’s more reliable simply because there are fewer moving pieces which could fail.
+
+Again, it’s important to remember that there is no silver bullet.
+
+Declarative code can be slower than the imperative code you might have written—but it can also be faster, since having the structure available at runtime might give you hints about how the objects are used which could help you to automatically organize them in memory for better locality of reference. Compilers do this with the syntax trees they build; that’s approximately what optimizers are. We can do so too.
+
+Declarative code can be harder to debug than the imperative code you might have written—but it can also be easier, since you have the structure at runtime to look at; you can analyze the state of the graph as a whole instead of just stepping through it. It’s necessarily _different_, of course; if control flow is abstracted, it becomes increasingly difficult for your the API’s client to simply use lldb to debug it.
+
+Declarative code can use more memory than the imperative code you might have written—but it can also use less. Once again, the increase in context could be leveraged to allow you to optimize for space as well as time.
+
+The key point here is that declarative programming techniques will not solve these problems for you; they may in fact require you to solve them for your API’s clients rather than them solving them for themselves, which can put more burden on you!
+
+Further, there may well be problems that don’t lend themselves to a declarative solution. Even if the problem does, your solution may not allow some particular bit of flexibility that some particular client requires. Every abstraction reduces the potential computation that can be done with it by some small amount; unless your abstraction is a Turing-complete language, it will necessarily reduce the flexibility of its clients to some degree. This is fine; this is, in fact the point. When you can do everything, doing anything at all requires a lot of time and effort—and that’s what we’re here for.
+
 ## Epilogue: Abstraction in the Abstract
 
 There is a proverb about a man who points at the moon, and says “There is the moon.” You do not think he is talking about his finger, but about the thing he points at. Extending his finger is shorthand; it is a symbol, a stand-in, to avoid his having to take you to the moon and smack you over the head with it before you get the point. The moon is a concrete thing; his finger, and indeed the word “moon,” are abstractions. We can be even more abstract: other worlds have moons, too. _The_ moon is really just _a_ moon. This is my moon; there are many like it, but this one is mine.
