@@ -181,23 +181,109 @@ Maybe you said to yourself: Why does autolayout have to make it so hard to just 
 
 To be clear: this feeling is totally justified. It _was_ easy with autoresizing masks. It really _is_ less easy with autolayout. But what does that mean, _precisely_?
 
-There’s an interesting contrast to be drawn between _simplicity_ and _easiness_. I am hardly the first to make this distinction, but I’d like to talk about it today by counting. 
+There’s an interesting contrast to be drawn between _simplicity_ and _ease_. I am hardly the first to make this distinction, but I’d like to talk about it in terms of counting.
+
+How many concrete concepts does `-firstObject` contain? When I say “concrete” I mean more or less “invariant”—concepts which are part of the contract of the method. Remember, this is, by definition, semantics, so we shouldn’t be afraid of this question just because it’s fuzzy. Let’s count them:
+
+    -(id)firstObject {
+    	return self.count? self[**0**] : **nil**;
+    }
+
+(Notice that I’m using the original definition, before we abstracted it.)
+
+I count (at least) two:
+
+1. The index of the object that we want to extract.
+
+2. The object that we want to return if the array is empty.
+
+(As an aside, we could also consider the condition as being a concrete, or at least _relatively_ concrete concept. For the purposes of this exercise, however, it is not hugely informative to do so.)
+
+How about `-nthObject:`?
+
+    -(id)nthObject:(NSUInteger)n {
+    	return (self.count > n)? self[n] : nil;
+    }
+
+Using the same metrics, it looks like only one:
+
+1. The object that we want to return if the desired index is out of bounds.
+
+And `-nthObject:default:`?
+
+    -(id)nthObject:(NSUInteger)n default:(id)marker {
+    	return (self.count > n)? self[n] : marker;
+    }
+
+By my count, 0. So it would seem that the more abstract the code, the fewer concrete concepts are involved. And indeed it makes some intuitive sense that abstraction and concreteness would be inversely linked.
+
+Now let’s look at the definitions of `-firstObject` and `-nthObject:` in terms of their more concrete counterparts:
+
+    -(id)firstObject {
+    	return [self nthObject:0];
+    }
+
+    -(id)nthObject:(NSUInteger)n {
+    	return [self nthObject:n default:nil];
+    }
+
+Looked at through the same lens, each of these definitions has captured only one concrete concept! And _this_ is more than simply semantics: did you notice that when we defined `-nthObject:default:` and then redefined `-nthObject:` in terms of it, we didn’t need to change `-firstObject` at all? It stayed exactly the same.
+
+This is getting near the heart of the difference between simplicity and ease. When you want the first object in an array (defaulting to nil if empty), is it easier to write the code out by hand or to use `-nthObject:` and pass 0? Obviously, `-nthObject:` is easier. Is it easier to use `-nthObject:`, again passing 0, or to use `-firstObject`? Again, obviously `-firstObject` is easier. But is it _simpler_?
+
+When we looked at the original implementation of `-firstObject`, we counted two concrete concepts. When we looked at the redefinition, we counted only one. Where did the other one go? And _why_ didn’t we have to change `-firstObject` when we changed `-nthObject:`?
+
+Remember that the two concrete concepts in the original `-firstObject` were `0` and `nil`. The redefinition only included `0`, however, because `nil` was moved inside `-nthObject:`! `-firstObject` is in fact using _exactly_ as many concrete concepts as it was before, it’s just hidden the second one behind the call to `nthObject:`—behind the veil of abstraction. Where it belongs!
+
+This, then, is the very core of simplicity: a simpler program has fewer concepts, a complex one has more. `-firstObject` is more complex than `-nthObject:` precisely because it is less general; the increase in abstraction mirrors an increase in simplicity.
+
+_Ease_ is in fact _convenience_. What makes it so hard to just set the view’s frame with autolayout? It’s not complexity; it’s inconvenience.
+
+Let me qualify that a little further: If `-firstObject` is exactly as complex before and after the existence of `-nthObject:`, then isn’t it more complex to use autolayout constraints to define the frame of the view on the screen than to assign that frame?
+
+If that’s all you ever want to do, then yes. But what’s involved in setting the frame when you want to ensure that it behaves according to a system of rules, e.g. that it is never larger than its parent, that it is never smaller than a certain size, that it is the same width as some other thing, that it has a certain aspect ratio?
+
+The complexity of implementing all of this quickly exceeds that of employing autolayout. The key is that what I will call the _total_ complexity of `-firstObject`—that is, the number of concrete concepts used by either it or the abstractions it uses—remained the same, the _local_ complexity—the number of direct references to concrete concepts—_was_ reduced.
+
+The _apparent_ simplicity of `-setFrame:`—really its ease—doesn’t scale. Without an abstraction of the rules for how the frame of that view should behave, you have to implement them all by hand. You _also_ have to ensure that they’re all enforced _whenever their dependencies change_. Whereas autolayout encompasses not only the rules embodied in the constraints, but also the necessary logic to keep them consistent and current—`-layout[Subviews]`, `-updateConstraints`, and so on.
+
+This sheds new light on `-setUpNavigationItem`. How many concrete concepts does it involve?
+
+    -(void)setUpNavigationItem {
+    	self.navigationItem.title = @"Recipient";
+    	self.navigationItem.prompt = @"Where would you like the flowers sent?";
+    }
+
+Multiple choice:
+
+1. 2.
+2. 3.
+3. Wait, are we talking about total or local complexity here?
+4. At least 4.
+5. You’re clearly just going to tell us anyway so get on with it.
+
+Good answer.
+
+The values assigned to `self.navigationItem.title` and `self.navigationItem.prompt` are clearly both concrete concepts. But, crucially, so are `self.navigationItem`’s `title` and `prompt`!
+
+Wait a minute. We didn’t count anything involving `self` in `-firstObject` or `-nthObject:`; what gives?
+
+Masked by the setters is another concrete concept: the change to the navigation item inherent in assigning a variable to one of its properties. This may seem like a bit of a leap from counting constants, but remember that one of the difficulties with the usefulness of `-setUpNavigationItem` was that if you subclassed the class implementing it, you would have to think about the order in which methods _which you might not even know about_ would be called in, in order to ensure that you did not encounter bugs. It’s not explicit in the syntax, but changes to state are real concepts which you have to think about in order to program in Objective-C.
+
+This is because Objective-C, like many languages, is _imperative_ in nature: you, the Grand Imperator, tell the program _how to behave_. In a declarative programming language, for example SQL, Prolog, or Haskell, you are instead the Grand Declarator, telling each abstraction _what it is_. Again: how vs. what.
+
+In order to describe changes in state in a declarative programming language, you therefore have to make them explicit: tell the program what it is in terms of these changes. Any part of the program using them is therefore referring to at least one concrete concept, making it more complex than an equivalent part of the program not also using state changes.
+
+In an imperative language, state changes are the _modus operandi_, or even the _mode de vie_. You live and breathe them, and thus all of your code is made more complex.
+
+At the same time, abstracting-without-abstractions denies you the ability to deal with these extra concepts behind the veil of local complexity; that is, any code _using_ an imperative abstraction necessarily incurs the complexity of any changes it performs in a total sense (as with any other abstraction), but _also_ incurs it locally—because any other changes to the same state need to be carefully sequenced. The details leak from callee to caller, again and again, and can never be contained.
+
+## Part the Somethingth: Flow Control
+
+While Objective-C is an imperative language, we can view this as meaning that it can be programmed in an imperative style. Fortunately for us, we have seen that it can also be programmed in a declarative style.
 
 
-Objective-C is an imperative language, as are many, likely most of the others that we use day to day. There are declarative languages as well: I would characterize SQL, Prolog, and Haskell  as being declarative. It is not possible (pardon the generalization) to write programs without meaning, programs which say _how_ and not _what_. This is not a trait that Objective-C lacks; instead, it adds the ability to say _how_. This is an obvious way to program, and we’re very used to giving the computer instructions, to thinking about programs as linear sequences of commands that we have given to the computer, and to thinking about the consequences of these commands by stepping line by line through the program and seeing how it operates. 
 
-
-Abstraction—the selection and naming of concepts such that they can be reasoned upon as distinct from specific uses of them—is one of the two fundamental skills which programming entails. The other is composition. These skills are two sides of the same coin, yin and yang. With abstraction you break down a problem into components of its solution; with composition, you assemble these components into new abstractions, which are themselves assembled into other components, lather, rinse, repeat, to ultimately construct a solution to a problem.
-
-An imperative program abstracts and composes in much the same way that a declarative one does. 
-
-
-
-WIP WIP WIP WIP WIP
-
-Objective-C, and of course C and C++, and JavaScript and Java and Python and Ruby and Perl and PHP and every assembly language I’m familiar with and, I conjecture, the majority of all programming languages ever devised, are imperative languages.
-
-There are a not insignificant number of declarative languages, but they tend to be somewhat more domain-specific or esoteric: I would characterize Haskell as a declarative language, as are Prolog and SQL (of all things). Programs in these languages
 
 ## Abstraction and Composition
 
