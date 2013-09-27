@@ -369,13 +369,47 @@ With those problems goes some knowledge and control. We no longer have concrete 
 
 It’s no coincidence that this loss of control and gain in precision go hand in hand; they are, in fact, one and the same. As abstraction increases, complexity decreases; and control flow is inherently complex. Specific control flow is the opposite of high abstraction Per Kowalski, [ALGORITHM = LOGIC + CONTROL](http://www.doc.ic.ac.uk/~rak/papers/algorithm%20=%20logic%20+%20control.pdf); and in particular, _declarative_ abstractions gradually abstract the control away, replacing it with structure.
 
+## Part the Nextth: Abstract, but why _declarative_?
 
+All declarative systems are abstract, but perhaps not all abstractions are declarative. What makes an abstraction declarative?
 
-## Abstraction and Composition
+As we saw, a return value goes a long ways: it gives us something to reason on. If that is declaring what the concept of the method _is_, then maybe we could extrapolate that some such declarations are more declarative than others.
+
+This is a bit off in the weeds; I’m not sure you’ll agree with me, and I’m not sure anyone else will either. But part of what I think about when I think of “declarative programming” is the notion that you are constructing a system of objects at runtime out of which the desired behaviour falls naturally: a necessary consequence of the structure.
+
+To give an example of this, the appearance of a view hierarchy is a consequence of the structure of the views, and their arrangement and visual properties. All of these are declared properties of the view controllers; in this sense, we can think of a view hierarchy as being a declarative system, whose value is the contents of the screen buffer.
+
+View controllers have a similar hierarchy which provides the semantic structure of the app; this, and the transitions which the user will be taken through at runtime, is the structure made explicit in storyboards.
+
+Views and view controllers are, basically, a solved problem—Apple has provided these things, and by and large we use them. It’s important to realize, however, that they have not cornered the market. We solve problems all day every day, generally more than we cause; that’s why anyone bothers to pay us. Some of these problems are likely to have declarative solutions; some of those declarative solutions may well be qualitatively better than how we might be solving them otherwise. How can we find them?
+
+By pursuing simplicity.
+
+## Part the nth: The Composition of Abstraction
 
 The Structure and Interpretation of Computer Programs, in my opinion the most important work on our field yet produced, tells us early on that _the most important features_ of every programming language are its facilities for abstraction and composition, and that we should therefore judge every language by these features.
 
-## Abstraction in the Abstract
+This is hyperbole, but I think it’s justified hyperbole. Composition is abstraction’s dual; where abstraction is breaking a problem into simpler components, composition is reassembling those into the solution. Constructing an abstraction is generally itself composition of other abstractions; any time you use an abstraction, you are composing.
+
+Where abstraction reduces complexity, composition increases it. This is warranted, of course; if you have a complex problem, then the solution—the negative space around the problem, if you will—must likewise be complex!
+
+Fortunately, imperative composition and declarative composition model the complexity differently. Imperative composition models the complexity in the structure of the code, with every piece of the solution expressed explicitly in the control flow. Declarative composition models the complexity in the structure of the object graph at runtime, with every piece of the solution implied in the code and how the structure is built—automated, in effect.
+
+Imperative composition is the approach we’re all familiar with; we write code to do one thing, and then to do another thing. Perhaps we write a loop. This is `-setUpNavigationItem` or `-setChild:`—imperative code, ordered and fragile and normal.
+
+Declarative composition, however, is adding declarative abstractions to other declarative abstractions. An array is a declarative abstraction; so is a tree node, or a view (with subviews) or a view controller (with child view controllers) or an autolayout constraint.
+
+Even though a declarative solution will model the complexity in the runtime structure and not the code, managing this complexity is important—this is, after all, a key responsibility of every programmer who wishes to continue solving problems tomorrow without having to rewrite from scratch. We need to be able to debug, we need to have acceptable performance, and we need, fundamentally, to understand what’s going on.
+
+It is therefore in our best interests to ensure that the abstractions we build are as simple as possible: simple abstractions are more flexible, meaning more easily composed together, because they do not introduce factors not necessary to their operation.
+
+Each instance variable you add to a class increases its complexity. Each reference to a singleton increases its complexity. Each line of code increases its complexity.
+
+There is no analogous cost to classes. We may feel like we incur some penalty to have to add a new class; but these things aren’t rationed.
+
+Ergo, more, simpler classes are “better”—in the sense of allowing “more declarative” solutions—than are fewer, more complex classes. And at this scale, we can use lines of code as a rule of thumb: longer classes are probably more complex, and are less likely to be adequately declarative.
+
+## Epilogue: Abstraction in the Abstract
 
 There is a proverb about a man who points at the moon, and says “There is the moon.” You do not think he is talking about his finger, but about the thing he points at. Extending his finger is shorthand; it is a symbol, a stand-in, to avoid his having to take you to the moon and smack you over the head with it before you get the point. The moon is a concrete thing; his finger, and indeed the word “moon,” are abstractions. We can be even more abstract: other worlds have moons, too. _The_ moon is really just _a_ moon. This is my moon; there are many like it, but this one is mine.
 
@@ -396,46 +430,5 @@ Some people are particularly good at the selection and combination of words. Wri
 But naming things? Abstraction, is that a skill? Absolutely it is. If you hurt your hand because you touch the flame, you do not learn only not to touch _this particular_ flame, but all flames; and from there, to _things that are hot_, and you might further abstract from this experience the important lesson to be more careful during chemistry class. Each abstraction is a leap from symbol to definition. Making these leaps is a skill. It can be _practiced_. You can make these leaps more readily, reflexively, and see where it takes you.
 
 Another part of this skill is developing your intuition for which leaps _should_ be made. You learned that when you got burnt, your hand became a bit more red where you were burnt, as your body works to heal itself. You probably don’t make the leap to assuming that everything which is burnt turns red and heals itself. Certainly this does not seem to be true of the match!
-
-## Composition
-
-
-
-
-
-
-
-
-
-The risk is falling behind. Apple is not afraid to strand you without any customers. The market is not afraid to ignore you if you don’t work with the latest & greatest.
-
-At the same time you have an incredible amount to gain: abstraction is one of the two core skills of programming on any platform. (The other one is composition.) You should not try to be a better Mac and iOS programmer! You should try to be a better programmer. Focusing on the fundamental skills will make you more effective at programming, period. It will change how you think about problem-solving, and will help you tackle problems that you felt were beyond your reach.
-
-It will also help you write more reliable programs, more maintainable programs, faster programs. None of these is a determinant of success by itself, but if an unreliable, unmaintainable, dog slow mess of a program is successful now, it very soon will not be—because change is inevitable.
-
-Necessity demands pragmatism. Pragmatism demands flexibility. Flexibility demands simplicity. Simplicity _is_ abstraction.
-
-- why?
-	- don’t want to/can’t take the time that’s going to be required to learn the thing
-		- you have to ship
-		- you have to support old releases, not the latest & greatest beta which could very well brick your phone
-		- by the time you can use the new API, WWDC is a distant memory (if you even got to attend!) and you’re forced to rely on the docs, StackOverflow, the dev forums, twitter, mailing lists, colleagues, talks at conferences
-		- this is a treadmill: we have every reason to believe that Apple will continue releasing new API every summer until the sun explodes
-		- is this really going to put food on my plate?
-	- concerns about performance (abstraction generally implies indirection, i.e. at least one extra step)
-		- optimization is hard
-		- every little bit of friction could hurt your framerate
-		- you put lots of work into your existing stuff to make it fast enough
-	- concerns about “magic”—opaque
-		- can’t just set a breakpoint
-			- 
-		- can’t just step through it in the debugger
-		- some things that were trivial are much less obvious now
-	- often something that was easy the old way is comparatively more complex now
-	- what we know already is good enough to have got us this far
-
-- but: you _need_ to be better at making and using abstractions
-	- your customers like shiny, pretty things
-
 
 ## Q?&A!
