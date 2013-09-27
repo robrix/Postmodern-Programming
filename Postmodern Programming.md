@@ -167,7 +167,7 @@ This is, again, clearly more abstract: we generalized from the return of nil to 
 
 In each of these instances, a decision was abstracted by replacing a constant with a parameter (and adjusting the logic accordingly where necessary). Each resulting method is more abstract than the previous. Are there other ways of abstracting?
 
-I’m not going to answer this, right now at least. But take it as an experiment: Can you abstract a concept without replacing a constant with a variable (parameter, instance variable, or otherwise)? If so, what does that look like? And by all means if you _do_ try this, let me know where it takes you. I know what my answer is, but it might not be the same as yours!
+I’m not going to answer this, or at least not right now. But take it as an experiment: Can you abstract a concept without replacing a constant with a variable (parameter, instance variable, or otherwise)? If so, what does that look like? And by all means if you _do_ try this, let me know where it takes you. I know what my answer is, but it might not be the same as yours!
 
 ## Part the Third: Complexity Complex
 
