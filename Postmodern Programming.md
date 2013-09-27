@@ -282,8 +282,92 @@ At the same time, abstracting-without-abstractions denies you the ability to dea
 
 ## Part the Somethingth: Flow Control
 
-While Objective-C is an imperative language, we can view this as meaning that it can be programmed in an imperative style. Fortunately for us, we have seen that it can also be programmed in a declarative style.
+While Objective-C is an imperative language, we can view this as meaning that it can be programmed in an imperative style. Fortunately for us, we have seen that it can also be programmed in a declarative style. What would a declarative counterpart to `-setUpNavigationItem` look like?
 
+First off, it would have to have a return value; it’s not an abstraction if it doesn’t exist. Since this is just a second approximation, let’s just return a dictionary:
+
+    -(NSDictionary *)
+
+Wait a minute! Immediately we hit a wall. What do we call it? We’re basically describing how a `UINavigationItem` should be configured, but we can’t just call it `-navigationItem` and return a `UINavigationItem *` instead of a dictionary, can we? And even if we did, aren’t we just going to be calling setters on that, thus incurring more complexity?
+
+To the first question: that sounds like a fun experiment! Let me know how it goes for you.
+
+To the second question: If state is mutated in the forest and no one is around to observe its side effects, does it incur a penalty? Less cheekily: We’d definitely have to call setters on it. But how would anything know? If we allocate a new object, and assign some values to it, nothing outside of that method can see those individual changes. Only changes to an object that _both_ methods use will cause problems. And of course nothing can use the returned object until it has been returned, by which point the method creating it will not be changing it again!
+
+In the meantime, we’ll still just return a dictionary from this method; let’s call it `-navigationItemState`:
+
+    -(NSDictionary *)navigationItemState {
+    	return @{ @"title": @"Recipient",
+    	         @"prompt": @"Where would you like the flowers sent?" };
+    }
+
+Now we have only the complexity of the values, not of the changes as well. But surely this is hand-waving: this doesn’t assign anything to the `navigationItem`; it’s just moved the problem elsewhere!
+
+Indeed it has. The sad truth is that `UIViewController`’s API is not a particularly declarative one; we’re on our own for this one. What does it look like to assign this, perhaps in `-viewDidLoad`?
+
+    NSDictionary *state = self.navigationItemState;
+    self.navigationItem.title = state[@"title"];
+    self.navigationItem.prompt = state[@"prompt"];
+
+Now I _know_ it’s just hand-waving: that’s exactly the kind of assignment we were trying to avoid!
+
+Or is it? Since the change has been decoupled from the values, we can subclass this view controller with impunity, implementing `-navigationItemState` and returning our own values. We’re still out of luck if we don’t know it exists, of course; we would still be changing our own `navigationItem`’s properties in competition with `[super viewDidLoad]`, and thus dependent on ordering. But this is a non-issue; it’s trivially obvious that a declarative API can’t help you if you don’t use it!
+
+But what if we only want to show the navigation item’s prompt when in portrait, and never when in landscape? Should we implement `-navigationItemStateForUserInterfaceOrientation:`?
+
+We could; but then we’d have to make sure that we’re assigning the state manually every time the device’s orientation changes. Then if we decide we also want it to change when some _other_ factor is changed, we’re forced to update it then, too, and carefully ensure that we apply all the relevant rules _every time_. It’s a lot like `-setFrame:` vs. autolayout.
+
+Strike that: it’s _exactly_ like `-setFrame:` vs. autolayout.
+
+We’ve missed an opportunity for abstraction. We care about more than just the state, we also care about how it depends on the state around it. Maybe we encode these rules as lines of imperative code, or maybe we encode them in some declarative abstraction—something which we construct, and whose structure implies the desired behaviour.
+
+We further need to encode _when_ the state changes, i.e. in response to changes in what properties should the navigation item’s state change? This is an orthogonal concern, but clearly closely related: each of the navigation item state’s rules is based on some piece of state in some other object, for example the view controller’s orientation; let’s call these _dependencies_. Therefore, when the value of any dependency changes, so should the navigation item’s state.
+
+When you put this all together, you have something like KVO. No wait, ReactiveCocoa! Or maybe Cocoa Bindings? Or maybe just a `Memo` object:
+
+    @interface Memo : NSObject
+    -(instancetype)initWithBlock:(id(^)())block;
+    -(void)addDependencyWithObject:(id)dependency keyPath:(NSString *)keyPath;
+    @property (readonly) id value;
+    @end
+
+When you create a `Memo`, you give it a block that it should call when any of its dependencies is changed.
+
+`-addDependencyWithObject:keyPath:` adds a dependency which it watches for changes, presumably with KVO.
+
+When you call `-value`, it checks to see if it has been invalidated by a change to a dependency, and if so, evaluates the block. It returns the object that the block produced most recently.
+
+Every Memo is effectively a cache of a calculated value that is automatically invalidated whenever one or more of its dependencies changes; it is updated lazily, when its value is requested.
+
+This is not sufficient to cover the gamut of responses to state changes! It is perhaps instead the 90% solution: enough to cover the majority of cases. I’d encourage you to try implementing an object with this interface, and to use it and see when and why it falls short; if you’d like to see what I did, it’s in the aforementioned Navel-Gazing repository on my github account.
+
+While it doesn’t cover everything, this minimal representation _is_ sufficient to handle changes to the notification item’s state in response to changes in orientation:
+
+    -(NSDictionary *)navigationItemState {
+    	return UIInterfaceOrientationIsPortrait([UIApplication sharedApplication].statusBarOrientation)?
+    		@{ @"title": @"Recipient",
+    	    @"prompt": @"Where would you like the flowers sent?" }
+    	:	@{ @"title": @"Recipient" };
+    }
+
+    -(void)viewDidLoad {
+    	self.navigationItemStateMemo = [[Memo alloc] initWithBlock:^{
+    		NSDictionary *state = self.navigationItemState;
+    		self.navigationItem.title = state[@"title"];
+    		self.navigationItem.prompt = state[@"prompt"];
+    		return state;
+    	}];
+    }
+
+But if you try this, it doesn’t work. What’s wrong? Memos as described above are lazy, but since we’re never using the memo’s value, it’s never being calculated. Once again, the impedance mismatch between imperative and declarative styles rears its ugly head.
+
+If we want to bridge the gap, we could allow _strict_, also known as _greedy_ evaluation, forcing the value to be updated as soon as it is invalidated. We’ll leave that as an exercise for the audience; but it’s useful to realize that this is, again, a problem where imperative style code forces us to think overmuch about ordering.
+
+On the other hand, if we were always using the value of the memo at all the right times, for example if internally `UIViewController` was using a `Memo` to check our `navigationItemState` memo for updates—because of course its `value` is KVO-compliant!—we would see exactly the desired behaviour. The problems with ordering and timing are gone.
+
+With those problems goes some knowledge and control. We no longer have concrete knowledge or control of precisely when and how the state is calculated or used. It’s memoized, so it may not be calculated every time it’s used. If it’s lazy, so it may not be calculated when it’s unused. We don’t know how often the memoized value will be requested of us, because that’s coming from some other part of the code—or of some other person’s code.
+
+It’s no coincidence that this loss of control and gain in precision go hand in hand; they are, in fact, one and the same. As abstraction increases, complexity decreases; and control flow is inherently complex. Specific control flow is the opposite of high abstraction Per Kowalski, [ALGORITHM = LOGIC + CONTROL](http://www.doc.ic.ac.uk/~rak/papers/algorithm%20=%20logic%20+%20control.pdf); and in particular, _declarative_ abstractions gradually abstract the control away, replacing it with structure.
 
 
 
