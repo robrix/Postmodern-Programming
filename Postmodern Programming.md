@@ -66,8 +66,8 @@ If you do all of this ad hoc any time you need to set the child view controller,
     	[_child removeFromParentViewController];
     	_child = child;
     	[self addChildViewController:child];
-    	[self.view addSubview:child];
-    	child.frame = self.view.bounds;
+    	[self.view addSubview:child.view];
+    	child.view.frame = self.view.bounds;
     	[child didMoveToParentViewController:self];
     }
 
@@ -83,7 +83,7 @@ We know about this sort of thing. Sure, we might repeat ourselves _a little_, bu
 
 But…
 
-How many of us have written a `-firstObject` method in a category on `NSArray`? What did it look like?
+Before iOS 7/OS X 10.9, how many of wrote a `-firstObject` method in a category on `NSArray`? What did it look like?
 
     -(id)firstObject {
     	return self.count? self[0] : nil;
@@ -94,7 +94,7 @@ This is abstraction too, isn’t it? We’ve named something.
 Perhaps we wrote this method after getting fed up of writing this out by hand every time we wanted to reason about the first object in an array. We might have been doing this directly, explicitly using the logic long-form:
 
     -(NSString *)firstName {
-    	NSString *nameComponents = [self.fullName componentsSeparatedByString:@" "];
+    	NSArray *nameComponents = [self.fullName componentsSeparatedByString:@" "];
     	return nameComponents.count? nameComponents[0] : nil;
     }
 
