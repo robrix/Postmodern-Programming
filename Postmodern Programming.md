@@ -122,13 +122,13 @@ Furthermore, if you subclass it, and you don’t know that this method exists, y
 
 And you’re not repeating yourself anyway, right? It’s not like you’d ever use these values anywhere else; you’d use different values. Not repetition at all.
 
-Of course, while the content varies, the actions do not. You’re duplicating the assignment of these two related properties. It _is_ repetition; but it appears to be almost unavoidable repetition. Oh, you could parameterize the method with two strings, but what has that got you, really? At best a convenience that you will, again, use at most once or twice and which saves you, ultimately, nothing.
+Of course, while the content varies, the actions do not. You’re duplicating the assignment of these two related properties. It _is_ repetition; but it appears to be almost unavoidable repetition. Oh, you could parameterize the method with two strings, but what has that got you, really? At best a convenience that you will, again, use at most once or twice and which saves you, ultimately, nothing. As with `-setChild:`, we’re left with discomfort: users have to know _how it works_ to be able to use it or the class containing it safely.
 
 The commonality this shares with `-setChild:` is also the contrast it has with `-firstObject`: `-setChild:` and `-setUpNavigationItem` both tell the computer _how_ to do something. `-firstObject`, on the other hand, defines _what_ the first object _is_.
 
 Which is to say: of course `-firstObject` _also_ tells the computer _how_ to accomplish its task: send the count message to self, and if its return value was nonzero then return the result of sending `-objectAtIndexedSubscript:` to self with a parameter of zero; otherwise, return nil. But this recipe for _how_ the computer should perform it coincides nicely with its declaration of _what it is_: “the first object of arrays is, when nonempty the one at object 0, and otherwise nil.”
 
-With `-setUpNavigationItem`, defining the _what_ is almost a contradiction in terms: it’s not a noun, not a concept. It has no value (by which I mean that it declares its return type to be `void`, i.e. no type, no value). It was _abstracted_, but in a sense it is not _an abstraction_, but merely an _extraction_ of specific instructions.
+With `-setUpNavigationItem`, defining the _what_ is a contradiction in terms: it’s not a noun, not a concept. It has no value (by which I mean that it declares its return type to be `void`, i.e. no type, no value). It was _abstracted_, but in a sense it is not _an abstraction_, but merely an _extraction_ of specific instructions.
 
 Declarative programming is nebulous, ill-defined, _abstract_. For the moment let’s characterize it as the `-firstObject` approach, whereas the `setUpNavigationItem` and `-setChild:` approaches are _imperative_. Or, more succinctly: the difference between what and how.
 
@@ -173,7 +173,7 @@ I’m not going to answer this, or at least not right now. But take it as an exp
 
 ## Part the Third: Complexity Complex
 
-It might seem like a non sequitur to jump from talking about abstraction to talking about complexity, but I promise the segue makes sense.
+It might seem like a non sequitur to jump from talking about abstraction to talking about complexity, but I promise the segue makes sense if you’re me.
 
 Has anyone here been programming for the Mac since before 2011 or for iOS since before 2012? Or has anyone written apps without autolayout and then tried writing one with autolayout?
 
