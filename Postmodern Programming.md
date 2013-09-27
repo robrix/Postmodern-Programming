@@ -36,7 +36,7 @@ Nevertheless, that which I think I know, follows: this is a talk about making mi
 
 Every day, we write code we’ve written before. We all do this, all the time. This isn’t practice, either; it’s boilerplate. “Boilerplate” ought to be a swear word.
 
-Apple has done a lot to diminish this which we often take advantage of because we’re programmers: we hate doing things twice when we could have done them once. So we use properties (no matter our feelings on dot notation), since that means we can write less boilerplate accessor code. And we’re a little happier for doing so. This is good for us!
+Apple has done a lot to reduce this which we often take advantage of because we’re programmers and therefore hate doing things twice when we could have done them once. So we use properties (no matter our feelings on dot notation), since that means we can write less boilerplate accessor code. And we’re a little happier for doing so. This is good for us!
 
 Because any time we write the same code twice, we are wasting ourselves. By definition, it could have been abstracted. We could have written it once. Perhaps the language makes it unclear, or difficult. Often we’re writing what is only _mostly_ the same code, but there are tangled-up bits of differences swimming about in the middle of it. Perhaps it’s so straightforward that pulling the code we’re repeating out into another method and using that instead is going to result in a net increase in the amount of code we write. Why make things more complex than you have to?
 
