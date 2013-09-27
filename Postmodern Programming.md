@@ -12,6 +12,16 @@ Really, this is a talk about language and languages, but while it features Objec
 
 I tell a (small) lie: it is a _little_ bit about Cocoa, in that it is about declarative programming and how to do it, and if we’re using Cocoa, which is rather the point of this conference, then obviously it’s going to intersect with that somewhat. But on the whole these things apply rather more widely, and it can be a good thing to think of oneself as a _programmer_, rather than as a _Cocoa_ or _Cocoa Touch programmer_.
 
+Of course, being that this is a talk about declarative programming, it might be discuss what that even means. Wikipedia (the authoritative repository of all human knowledge) gives three definitions:
+
+1. A program that describes _what_ computation should be performed and not _how_ to compute it
+2. Any programming language that lacks side effects (or more specifically, is referentially transparent)
+3. A language with a clear correspondence to mathematical logic
+
+Well, that certainly clarifies things. And as an aside: you have to love any concept whose wikipedia page includes the heading “Subparadigms.”
+
+For the moment let’s think of it as “not imperative programming,” where “imperative programming” is you, the Grand Imperator, telling the program what to do. Declarative programming would instead make you the Grand Declarator: you instead tell the program what it _is_. And, with that, the program no doubt walks away enlightened. (Even if we don’t.)
+
 ## Prologue: Everything I Know Is Wrong
 
 My name is Rob Rix. I’ve been a programmer for as long as I can remember, I’ve got twelve years of professional experience behind me, and I’ve spent the last eighteen months doing consulting and product development with Black Pixel. Before that, I spent eighteen months implementing sync, and so I know a thing or two about making mistakes.
@@ -120,7 +130,7 @@ Which is to say: of course `-firstObject` _also_ tells the computer _how_ to acc
 
 With `-setUpNavigationItem`, defining the _what_ is almost a contradiction in terms: it’s not a noun, not a concept. It has no value (by which I mean that it declares its return type to be `void`, i.e. no type, no value). It was _abstracted_, but in a sense it is not _an abstraction_, but merely an _extraction_ of specific instructions.
 
-Declarative programming is nebulous, ill-defined, _abstract_. Wikipedia gives three or so definitions, but for the moment let’s characterize it as the `-firstObject` approach, whereas the `setUpNavigationItem` and `-setChild:` approaches are _imperative_. Or, more succinctly: the difference between what and how.
+Declarative programming is nebulous, ill-defined, _abstract_. For the moment let’s characterize it as the `-firstObject` approach, whereas the `setUpNavigationItem` and `-setChild:` approaches are _imperative_. Or, more succinctly: the difference between what and how.
 
 But _what_ `-firstObject` is boils down to semantics, surely. We don’t have access to the syntax tree at runtime; we don’t have Lisp-style macros that can operate on the messages at or before compile-time, either. Nothing about these messages is available at any point to us, so _all that they can do is tell the computer how it should behave_! Right?
 
