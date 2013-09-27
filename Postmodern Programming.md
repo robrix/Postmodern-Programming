@@ -138,6 +138,8 @@ In fact, yes. The specific messages or structure of messages _are_ (basically) i
 
 They do not exist. They are unreal, unthings.
 
+This is what happens to you when you stare too long into the `void`.
+
 
 While `-firstObject` is an abstraction, it can be abstracted further. For example, we could generalize it to return the object at any in-bounds ordinal or nil:
 
