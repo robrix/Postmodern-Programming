@@ -398,32 +398,40 @@ There are strong similarities with `Memo`, and maybe we should think about abstr
     		self.navigationItem.title = state[@"title"];
     		self.navigationItem.prompt = state[@"prompt"];
     	}];
-    	[sink addDependencyWithObject:memo];
+    	[sink addDependencyWithObject:memo keyPath:value];
     }
 
-Now, when the status bar orientation changes, `Memo` is invalidated, which in turn immediately invalidates its value and notifies any observers via KVO. This includes the sink, which asks `memo` for its value.
+Now, when the status bar orientation changes, `Memo` is invalidated, which in turn immediately invalidates its value and notifies any observers via KVO. This triggers the sink to run its block and ask `memo` for its value, and when it does so, `memo` is evaluated.
 
-We’ve also now abstracted the orientation into a parameter so that the `-navigationItemState` method doesn’t need to talk about the `UIApplication`
+Turning to the evaluation of the memo, we see that we’ve also now abstracted the orientation into a parameter, such that the `-navigationItemStateForOrientation:` method no longer needs to know about the `UIApplication`; removing the reference to the singleton means that there’s one fewer tightly coupled symbol, and ergo less complication. This method isn’t shown, but adding the parameter is straightforward.
 
-and applies it to the navigation item. As expected, the problems of timing and ordering have gone away.
+We could go a step further, abstracting the dependency tracking, perhaps even providing the dependencies’ latest values to the memo such that it no longer has to duplicate the dependency key path and fetching the state. If the dependency tracking memoizes these values, then it looks more and more like a `Memo` itself, and we might think about making it a protocol instead of just a class interface. But for now, we will move along to the sink.
 
-With those problems goes some knowledge and control. We no longer have concrete knowledge or control of precisely when and how the state is calculated or used. It’s memoized, so it may not be calculated every time it’s used. If it’s lazy, so it may not be calculated when it’s unused. We don’t know how often the memoized value will be requested of us, because that’s coming from some other part of the code—or of some other person’s code.
+Having retrieved `memo`’s value, `sink` applies it to the navigation item; and, as expected, the problems of timing and ordering have gone away.
 
-It’s no coincidence that this loss of control and gain in precision go hand in hand; they are, in fact, one and the same. As abstraction increases, complexity decreases; and control flow is inherently complex. Specific control flow is the opposite of high abstraction Per Kowalski, [ALGORITHM = LOGIC + CONTROL](http://www.doc.ic.ac.uk/~rak/papers/algorithm%20=%20logic%20+%20control.pdf); and in particular, _declarative_ abstractions gradually abstract the control away, replacing it with structure.
+With those problems goes some knowledge and control. We no longer have concrete knowledge or control of _precisely_ when and how the state is calculated or used. It’s memoized, so it may not be calculated every time it’s used. If it’s lazy, so it may not be calculated when it’s _un_used. We don’t know how often the memoized value will be requested of us, because that’s coming from some other part of the code—or of some other person’s code.
 
-## Part the Nextth: Abstract, but why _declarative_?
+It’s no coincidence that this loss of control and gain in precision go hand in hand; they are, in fact, one and the same. As abstraction increases, complexity decreases; and control flow is inherently complex. Specific control flow is the opposite of high abstraction. Per Kowalski, [ALGORITHM = LOGIC + CONTROL](http://www.doc.ic.ac.uk/~rak/papers/algorithm%20=%20logic%20+%20control.pdf); and in particular, _declarative_ abstractions gradually abstract the control away, replacing it with structure.
+
+## Part the Nextth: Why Declarative?
 
 All declarative systems are abstract, but perhaps not all abstractions are declarative. What makes an abstraction declarative?
 
-As we saw, a return value goes a long ways: it gives us something to reason on. If that is declaring what the concept of the method _is_, then maybe we could extrapolate that some such declarations are more declarative than others.
+As we saw, a return value goes a long ways: it gives us something to reason on. If that is declaring what the concept of the method _is_, and if some abstractions are more abstract than others, then maybe we could extrapolate that some such declarations are more declarative than others.
 
-This is a bit off in the weeds; I’m not sure you’ll agree with me, and I’m not sure anyone else will either. But part of what I think about when I think of “declarative programming” is the notion that you are constructing a system of objects at runtime out of which the desired behaviour falls naturally: a necessary consequence of the structure.
+For example, `-firstObject` is clearly declarative code, but it doesn’t give us as much useful to reason on as `Memo` or even partly-imperative `Sink` does—it has meaning, but it has _less_ meaning than they do; after all, you can only refer to it in the abstract to a certain point—you must always be speaking of the array whose first object this is.
 
-To give an example of this, the appearance of a view hierarchy is a consequence of the structure of the views, and their arrangement and visual properties. All of these are declared properties of the view controllers; in this sense, we can think of a view hierarchy as being a declarative system, whose value is the contents of the screen buffer.
+Instances of `Memo` and `Sink`, on the other hand, are values by nature, where methods are less so (not being truly first-class concepts in the language). As we have seen, they can be combined with other objects quite flexibly. It does not seem too much of a stretch to describe them as being _more declarative_ than, say, the average app delegate or those view controllers you sometimes see where it’s clear the developers wasn’t going to add one single other controller class to the project without a gun to their head.
 
-View controllers have a similar hierarchy which provides the semantic structure of the app; this, and the transitions which the user will be taken through at runtime, is the structure made explicit in storyboards.
+This is a bit off in the weeds; I’m not sure you’ll agree with me, and I’m not sure anyone else will either. (Take that as an imperative, if you will, to test this declaration.) But part of what I think about when I think of “declarative programming” is the notion that you are constructing a system of objects at runtime out of which the desired behaviour falls naturally: a necessary consequence of the structure.
 
-Views and view controllers are, basically, a solved problem—Apple has provided these things, and by and large we use them. It’s important to realize, however, that they have not cornered the market. We solve problems all day every day, generally more than we cause; that’s why anyone bothers to pay us. Some of these problems are likely to have declarative solutions; some of those declarative solutions may well be qualitatively better than how we might be solving them otherwise. How can we find them?
+To give an example of this, the appearance of a view hierarchy is a consequence of the structure of the views, and their arrangement and visual properties. All of these are declared properties of the view controllers; in this sense, we can think of a view hierarchy as being a declarative system, whose value is the contents of the layer, or perhaps the screen buffer.
+
+View controllers have a similar hierarchy which provides the semantic structure of the app; this, and the paths through which the user will be taken at runtime, is the structure made explicit in storyboards.
+
+Views and view controllers are, basically, a solved problem—Apple has provided these things, and by and large we use them. It’s important to realize, however, that they have not cornered the market. We solve problems all day every day, generally more than we cause; that’s why anyone bothers to pay us. Some of these problems are likely to have declarative solutions (after all, if you can’t talk about what these things are, then what are they, really?); some of those declarative solutions may well be qualitatively better than how we might be solving them otherwise—in fact, I think that’s extremely likely, given what we’ve seen about their behaviour with regard to time and ordering relative to imperative solutions.
+
+How can we find such solutions?
 
 By pursuing simplicity.
 
@@ -433,31 +441,33 @@ The Structure and Interpretation of Computer Programs, in my opinion the most im
 
 This is hyperbole, but I think it’s justified hyperbole. Composition is abstraction’s dual; where abstraction is breaking a problem into simpler components, composition is reassembling those into the solution. Constructing an abstraction is generally itself composition of other abstractions; any time you use an abstraction, you are composing.
 
-Where abstraction reduces complexity, composition increases it. This is warranted, of course; if you have a complex problem, then the solution—the negative space around the problem, if you will—must likewise be complex!
+Where abstraction reduces complexity, composition increases it. This is warranted, of course; if you have a complex problem, then the solution—the negative space around the problem, if you will, sharing its surface with all its fractal knots and whorls—must likewise be complex!
 
-Fortunately, imperative composition and declarative composition model the complexity differently. Imperative composition models the complexity in the structure of the code, with every piece of the solution expressed explicitly in the control flow. Declarative composition models the complexity in the structure of the object graph at runtime, with every piece of the solution implied in the code and how the structure is built—automated, in effect.
+Fortunately, imperative composition and declarative composition model the complexity differently. Imperative composition models the complexity in the structure of the code, with every piece of the solution expressed explicitly in the control flow. Declarative composition models the complexity in the structure of the object graph at runtime, with every piece of the solution implied in the code and how the structure is built—and in effect, how it is automated, since we rarely build an object graph by hand.
 
-Imperative composition is the approach we’re all familiar with; we write code to do one thing, and then to do another thing. Perhaps we write a loop. This is `-setUpNavigationItem` or `-setChild:`—imperative code, ordered and fragile and normal.
+Imperative composition is the approach we’re all familiar with; we write code to do one thing, and then to do another thing. Perhaps we write a loop. This is `-setUpNavigationItem` or `-setChild:`—imperative code, ordered, normal, and regrettably fragile.
 
-Declarative composition, however, is adding declarative abstractions to other declarative abstractions. An array is a declarative abstraction; so is a tree node, or a view (with subviews) or a view controller (with child view controllers) or an autolayout constraint.
+Declarative composition, however, is the assembly of declarative abstractions by appending or alternating declarative abstractions with other declarative abstractions. An array is a declarative abstraction; so is a tree node; or a view (with subviews); or a view controller (with child view controllers); or an autolayout constraint with its items. So is a `Memo` with dependencies that turn out to themselves be other `Memo`s, if we take that route. And for much the same reason, so is a `Sink`, despite its imperative process.
 
-Even though a declarative solution will model the complexity in the runtime structure and not the code, managing this complexity is important—this is, after all, a key responsibility of every programmer who wishes to continue solving problems tomorrow without having to rewrite from scratch. We need to be able to debug, we need to have acceptable performance, and we need, fundamentally, to understand what’s going on.
+Even though a declarative solution will model the complexity in the structure of the object graph and not in the structure of the code, managing this complexity is important—this is, after all, a key responsibility of every programmer who wishes to continue solving problems tomorrow without having to rewrite all of their code from scratch. We need to be able to debug, we need to have acceptable performance, and we need, fundamentally, to understand what’s going on—to have a mental model.
 
 It is therefore in our best interests to ensure that the abstractions we build are as simple as possible: simple abstractions are more flexible, meaning more easily composed together, because they do not introduce factors not necessary to their operation.
 
-Each instance variable you add to a class increases its complexity. Each reference to a singleton increases its complexity. Each line of code increases its complexity.
+Each instance variable you add to a class increases its complexity. Each reference to a singleton increases its complexity. Each reference to a global variable increases its complexity. Each line of code increases its complexity.
 
-There is no analogous cost to classes. We may feel like we incur some penalty to have to add a new class; but these things aren’t rationed.
+There is no analogous cost to adding classes to the project. We may feel like we incur some terrible penalty to have to add a new class, but as with integers, these things aren’t rationed; we aren’t in danger of exhausting a 32-bit address space with classes any time soon.
 
 Ergo, more, simpler classes are “better”—in the sense of allowing “more declarative” solutions—than are fewer, more complex classes. And at this scale, we can use lines of code as a rule of thumb: longer classes are probably more complex, and are less likely to be adequately declarative.
 
-The `Memo` class we looked at earlier is fairly minimalistic. We could factor out the observation of dependencies—that’s orthogonal to the core invalidate/evaluate/value concept—but we see diminishing returns at some point; I might sneer at convenience, but ultimately it’s what pays Apple’s bills, and likely ours, and as an API designer, developers are your users, and users are people too!
+`Memo` is fairly minimalistic. We could factor out the observation of dependencies—that’s orthogonal to the core invalidate/evaluate/value concept, and could perhaps be used by Sink. We could have the dependencies themselves be `Memo`s, giving this operation closure. However, we see diminishing returns at some point; while I might seem to sneer at convenience, it’s ultimately what pays Apple’s bills, and mine, and likely yours. As a declarative programmer, you are designing APIs; as an API designer, developers are your users. And users are people too!
 
 In the end, you have to ship. Experimenting with these ideas will not help you ship on Monday. Experimenting with these ideas will not help you ship next week. Probably not next month. But three to six months from now, having this experimentation behind you, having experience with these ideas in your repertoire, it absolutely will.
 
-Declarative code is simpler. It’s usually easier to read, in my experience. It’s smaller, it’s easy to get around, it’s more reliable simply because there are fewer moving pieces which could fail. On top of all of that, declarative code is immune to race conditions, the single largest issue preventing us from taking better advantage of multicore processors and distributed programming. And it is, without a doubt, the direction that the market is heading in: Apple is, increasingly, implementing declarative abstractions, and using them isn’t enough; we need to be able to write them as well.
+Declarative code is simpler. It’s usually easier to read, in my experience. It’s smaller, if more spread out; easy to get around. It’s more reliable simply because each component has fewer moving pieces which could fail, and fewer joints between them that could break. On top of all of that, the lack of ordering means that declarative code is immune to race conditions, the single largest issue with concurrency. And it is clearly the direction that the market and the industry is heading in: there is a lot of ongoing, exciting research being done in declarative languages and systems and how to survive in an imperative world.
 
-But again, it’s important to remember that there is no silver bullet. You will run into problems along the way:
+Further, Apple is increasingly implementing declarative APIs, and being able to use them isn’t enough; if we are to be able to tackle harder and harder problems, if we are to learn and grow, and if we are to stay relevant in the market, we need to be able to write them.
+
+But again, it’s important to remember that there is no silver bullet. You _will_ run into problems along the way:
 
 Declarative code can be slower than the imperative code you might have written—but it can also be faster, since having the structure available at runtime might give you hints about how the objects are used which could help you to automatically organize them in memory for better locality of reference. Compilers do this with the syntax trees they build; that’s approximately what optimizers are. We can do so too.
 
@@ -465,15 +475,19 @@ Declarative code can be harder to debug than the imperative code you might have 
 
 Declarative code can use more memory than the imperative code you might have written—but it can also use less. Once again, the increase in context could be leveraged to allow you to optimize for space as well as time.
 
-The key point here is that declarative programming techniques will not solve these problems for you; they may in fact require you to solve them for your API’s clients rather than them solving them for themselves, which can put more burden on you!
+Declarative code can be less familiar than the imperative code you might have written. Only time and practice will fix this one.
 
-Further, there may well be problems that don’t lend themselves to a declarative solution. Even if the problem does, your solution may not allow some particular bit of flexibility that some particular client requires. Every abstraction reduces the potential computation that can be done with it by some small amount; unless your abstraction is a Turing-complete language, it will necessarily reduce the flexibility of its clients to some degree. This is fine; this is, in fact the point. When you can do everything, doing anything at all requires a lot of time and effort—and that’s what we’re here for.
+No declarative programming techniques will solve these problems for you; they may in fact require you to solve them for your API’s clients, where before they might have been your clients’ problem. This is a responsibility, but it’s also an opportunity, as is so often the case: API design is not a very common expertise in the market.
+
+There may also be problems that don’t lend themselves to a declarative solution. Even if a particular problem does, your particular solution may not allow for some particular functionality or flexibility that some particular client requires. Every abstraction reduces the potential computation that can be done with it by some small amount; unless your abstraction is a Turing-complete language, it will necessarily reduce the flexibility of its clients to some degree. This is fine; this is, in fact, the point. When you can do everything, doing anything at all requires a lot of time and effort—and really, that’s what we’re here for.
 
 ## Epilogue: Abstraction in the Abstract
 
 There is a proverb about a man who points at the moon, and says “There is the moon.” We do not think he is referring to his finger, and so the lesson is: “Do not mistake the pointing finger for the moon.”
 
 Really, his finger is a symbol, a stand-in, to avoid his having to take you to the moon and smack you over the head with it before you get the point. The moon is a concrete thing; his finger, and indeed the word “moon,” are abstractions. We can be even more abstract: other worlds have moons, too. _The_ moon is really just _a_ moon. This is my moon; there are many like it, but this one is mine.
+
+(Why are we uncomfortable using articles and pronouns in method names?)
 
 To abstract is to identify an idea, a concept, as a unique thing which can be reasoned and acted upon in isolation. It is to give it a name; to define that name with that concept. This is equally true in language and in code.
 
