@@ -181,7 +181,7 @@ How often did you swear?
 
 Maybe you said to yourself: Why does autolayout have to make it so hard to just set the view’s frame? This was so easy with autoresizing masks! Why does autolayout have to make everything so complicated?
 
-To be clear: this feeling is totally justified. It _was_ easy with autoresizing masks. It really _is_ less easy with autolayout. But what does that mean, _precisely_?
+To be clear: this feeling is totally justified. It really _was_ easy with frames and autoresizing masks. It really _is_ less easy with autolayout. But what does that mean, _precisely_?
 
 There’s an interesting contrast to be drawn between _simplicity_ and _ease_. I am hardly the first to make this distinction, but I’d like to talk about it in terms of counting.
 
@@ -229,7 +229,7 @@ Now let’s look at the definitions of `-firstObject` and `-nthObject:` in terms
     	return [self nthObject:n default:nil];
     }
 
-Looked at through the same lens, each of these definitions has captured only one concrete concept! And _this_ is more than simply semantics: did you notice that when we defined `-nthObject:default:` and then redefined `-nthObject:` in terms of it, we didn’t need to change `-firstObject` at all? It stayed exactly the same.
+Looked at through the same lens, each of these definitions has captured only one concrete concept! And _this_ is more than simply semantics: perhaps you noticed that when we defined `-nthObject:default:` and then redefined `-nthObject:` in terms of it, we didn’t need to change `-firstObject` at all! It stayed exactly the same.
 
 This is getting near the heart of the difference between simplicity and ease. When you want the first object in an array (defaulting to nil if empty), is it easier to write the code out by hand or to use `-nthObject:` and pass 0? Obviously, `-nthObject:` is easier. Is it easier to use `-nthObject:`, again passing 0, or to use `-firstObject`? Again, obviously `-firstObject` is easier. But is it _simpler_?
 
@@ -245,7 +245,7 @@ Let me qualify that a little further: If `-firstObject` is exactly as complex be
 
 If that’s all you ever want to do, then yes. But what’s involved in setting the frame when you want to ensure that it behaves according to a system of rules, e.g. that it is never larger than its parent, that it is never smaller than a certain size, that it is the same width as some other thing, that it has a certain aspect ratio?
 
-The complexity of implementing all of this quickly exceeds that of employing autolayout. The key is that what I will call the _total_ complexity of `-firstObject`—that is, the number of concrete concepts used by either it or the abstractions it uses—remained the same, the _local_ complexity—the number of direct references to concrete concepts—_was_ reduced.
+The complexity of implementing all of this quickly exceeds that of using autolayout. The key is that what I will call the _total_ complexity of `-firstObject`—that is, the number of concrete concepts used by either it or the abstractions it uses—remained the same, the _local_ complexity—the number of direct references to concrete concepts—_was_ reduced.
 
 The _apparent_ simplicity of `-setFrame:`—really its ease—doesn’t scale. Without an abstraction of the rules for how the frame of that view should behave, you have to implement them all by hand. You _also_ have to ensure that they’re all enforced _whenever their dependencies change_. Whereas autolayout encompasses not only the rules embodied in the constraints, but also the necessary logic to keep them consistent and current—`-layout[Subviews]`, `-updateConstraints`, and so on.
 
@@ -276,9 +276,9 @@ This is because Objective-C, like many languages, is _imperative_ in nature: you
 
 In order to describe changes in state in a declarative programming language, you therefore have to make them explicit: tell the program what it is in terms of these changes. Any part of the program using them is therefore referring to at least one concrete concept, making it more complex than an equivalent part of the program not also using state changes.
 
-In an imperative language, state changes are the _modus operandi_, or even the _mode de vie_. You live and breathe them, and thus all of your code is made more complex.
+In an imperative language, state changes are the _status quo_, the _modus operandi_, or even the _mode de vie_. You live and breathe them, and thus all of your code is made more complex.
 
-At the same time, abstracting-without-abstractions denies you the ability to deal with these extra concepts behind the veil of local complexity; that is, any code _using_ an imperative abstraction necessarily incurs the complexity of any changes it performs in a total sense (as with any other abstraction), but _also_ incurs it locally—because any other changes to the same state need to be carefully sequenced. The details leak from callee to caller, again and again, and can never be contained.
+At the same time, abstracting imperatively, abstracting-without-abstractions, denies you the ability to deal with these extra concepts behind the veil of local complexity; that is, any code _using_ an imperative abstraction necessarily incurs the complexity of any changes it performs in a total sense (as with any other abstraction), but _also_ incurs it locally—because any other changes to the same state need to be carefully sequenced. The details leak from callee to caller, again and again, and can never be contained.
 
 ## Part the Somethingth: Flow Control
 
@@ -303,7 +303,7 @@ In the meantime, we’ll still just return a dictionary from this method; let’
 
 Now we have only the complexity of the values, not of the changes as well. But surely this is hand-waving: this doesn’t assign anything to the `navigationItem`; it’s just moved the problem elsewhere!
 
-Indeed it has. The sad truth is that `UIViewController`’s API is not a particularly declarative one; we’re on our own for this one. What does it look like to assign this, perhaps in `-viewDidLoad`?
+Indeed it has. The sad truth is that `UIViewController`’s API is not a particularly declarative one; we’re on our own for this one. Alright then, what does it look like to assign this, perhaps in `-viewDidLoad`?
 
     NSDictionary *state = self.navigationItemState;
     self.navigationItem.title = state[@"title"];
@@ -351,19 +351,33 @@ While it doesn’t cover everything, this minimal representation _is_ sufficient
     }
 
     -(void)viewDidLoad {
-    	self.navigationItemStateMemo = [[Memo alloc] initWithBlock:^{
+    	Memo *memo = self.navigationItemStateMemo;
+    	memo = [[Memo alloc] initWithBlock:^{
     		NSDictionary *state = self.navigationItemState;
     		self.navigationItem.title = state[@"title"];
     		self.navigationItem.prompt = state[@"prompt"];
     		return state;
     	}];
+    	[memo addDependencyWithObject:[UIApplication sharedApplication] keyPath:@"statusBarOrientation"];
     }
 
 But if you try this, it doesn’t work. What’s wrong? Memos as described above are lazy, but since we’re never using the memo’s value, it’s never being calculated. Once again, the impedance mismatch between imperative and declarative styles rears its ugly head.
 
-If we want to bridge the gap, we could allow _strict_, also known as _greedy_ evaluation, forcing the value to be updated as soon as it is invalidated. We’ll leave that as an exercise for the audience; but it’s useful to realize that this is, again, a problem where imperative style code forces us to think overmuch about ordering.
+If we want to bridge the gap, we could allow _strict_, also known as _greedy_ evaluation, forcing the value to be updated as soon as it is invalidated. We’ll leave that as an exercise for the audience; but it’s useful to realize that this is, again, a problem where imperative code forces us to think overmuch about ordering. Pushing this imperative code to the margins will help the rest of your code be cleaner, easier to reason about, but you can never root it out completely, and it taints anything which calls it.
 
-On the other hand, if we were always using the value of the memo at all the right times, for example if internally `UIViewController` was using a `Memo` to check our `navigationItemState` memo for updates—because of course its `value` is KVO-compliant!—we would see exactly the desired behaviour. The problems with ordering and timing are gone.
+On the other hand, if we were always using the value of the memo at all the right times, for example if internally `UIViewController` was using a `Memo` to check our `navigationItemState` memo for updates—because of course its `value` is KVO-compliant!—we would see exactly the desired behaviour. The problems with ordering and timing would be gone gone.
+
+The `Memo` we employ is acting in a role that functional reactive programming calls a sink, as opposed to a signal; where a signal acts solely to calculate a value in response to changes, a sink tracks the changes and causes imperative effects. Can we push the imperative effects further into the margins?
+
+    @interface Sink : NSObject
+    
+    -(instancetype)initWithBlock:(void(^)())block;
+    
+    -(void)addDependencyWithObject:(id)dependency keyPath:(NSString *)keyPath;
+    
+    @end
+
+There are strong similarities with `Memo`, and maybe now would be a good time to start thinking about 
 
 With those problems goes some knowledge and control. We no longer have concrete knowledge or control of precisely when and how the state is calculated or used. It’s memoized, so it may not be calculated every time it’s used. If it’s lazy, so it may not be calculated when it’s unused. We don’t know how often the memoized value will be requested of us, because that’s coming from some other part of the code—or of some other person’s code.
 
