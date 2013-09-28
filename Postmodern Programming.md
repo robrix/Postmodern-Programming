@@ -1,6 +1,6 @@
 ## Foreword: What’s In a Name?
 
-The schedule calls this talk “Building a Better Mousetrap: Declarative Programming and You.” I’ve tried on a few other names for it in the meantime, and am now thinking of it as Postmodern Programming. I hope you’ll forgive the change, but I think this new title more accurately describes its subject.
+The schedule calls this talk “Building a Better Mousetrap: Declarative Programming and You.” Mark Dalrymple calls it the same, but with “Moose” instead of “Mouse.” I’ve tried on a few other names for it in the meantime, and am now thinking of it as Postmodern Programming. I hope you’ll forgive the change, but I think this new title more accurately describes its subject.
 
 I’ve gone through many iterations of this material, including a half-written GitHub client which was to be used to inspect its own source code and commits during the talk. I call it Navel-Gazing. We won’t be looking at it today (although it’s on my github page if you’re interested), but I think you’ll find its name appropriate to the talk, too.
 
@@ -12,7 +12,7 @@ Really, this is a talk about language and languages, but while it features Objec
 
 I tell a (small) lie: it is a _little_ bit about Cocoa, in that it is about declarative programming and how to do it, and if we’re using Cocoa, which is rather the point of this conference, then obviously it’s going to intersect with that somewhat. But on the whole these things apply rather more widely, and it can be a good thing to think of oneself as a _programmer_, rather than as a _Cocoa_ or _Cocoa Touch programmer_.
 
-Of course, being that this is a talk about declarative programming, it might be discuss what that even means. Wikipedia (the authoritative repository of all human knowledge) gives three definitions:
+Of course, being that this is a talk about declarative programming, it might be useful to discuss what that even means. Wikipedia (the authoritative repository of all human knowledge) gives us three definitions:
 
 1. A program that describes _what_ computation should be performed and not _how_ to compute it
 2. Any programming language that lacks side effects (or more specifically, is referentially transparent)
@@ -34,9 +34,9 @@ Nevertheless, that which I think I know, follows: this is a talk about making mi
 
 ## Part the First: Don’t Repeat Don’t Repeating Yourself
 
-Every day, we write code we’ve written before. We all do this, all the time. This isn’t practice, either; it’s boilerplate. “Boilerplate” ought to be a swear word.
+Every day, we write code we’ve written before. We all do this, all the time. This isn’t us practicing, either; it’s boilerplate. “Boilerplate” ought to be a swear word.
 
-Apple has done a lot to reduce this which we often take advantage of because we’re programmers and therefore hate doing things twice when we could have done them once. So we use properties (no matter our feelings on dot notation), since that means we can write less boilerplate accessor code. And we’re a little happier for doing so. This is good for us!
+Apple has done a lot to reduce this which we often take advantage of because we’re programmers and therefore we hate doing things twice when we could have done them once. So we use properties (no matter what our feelings on dot notation are), since that means we can write less boilerplate accessor code. And we’re a little happier for doing so. This is good for us!
 
 Because any time we write the same code twice, we are wasting ourselves. By definition, it could have been abstracted. We could have written it once. Perhaps the language makes it unclear, or difficult. Often we’re writing what is only _mostly_ the same code, but there are tangled-up bits of differences swimming about in the middle of it. Perhaps it’s so straightforward that pulling the code we’re repeating out into another method and using that instead is going to result in a net increase in the amount of code we write. Why make things more complex than you have to?
 
@@ -48,11 +48,11 @@ And unfortunately, even if we were to simply avoid repeating ourselves, it would
 
 ## Part the Second: Abstraction, Abstracted
 
-It’s famously said that there are only two hard problems in computer science: cache invalidation, naming things, and off-by-one errors. This is a talk about the median value, about naming things.
+It’s famously said that there are only two hard problems in computer science: cache invalidation, naming things, and off-by-one errors. (This is a talk about the median value: about naming things.)
 
 Until recently, I thought that joke was saying that picking the name is the hard part: “Is this a ManagerFactoryObjectController or a ControllerFactoryManagerObject?”
 
-That’s _a_ joke, but perhaps not _the_ joke. In truth, it isn’t easy selecting a name, but that’s not the hard part by half. The hard part is selecting something which is deserving of a name.
+That’s _a_ joke, but perhaps not _the_ joke. In truth, it isn’t easy selecting a name, but that’s not the hard part by half. The hard part is selecting something which is deserving of a name: abstracting.
 
 How many of us have implemented view controller containment in a UIViewController subclass? Perhaps this is a view controller which decorates some child view controller with some common widget or branding that we want to use in various parts of our app?
 
@@ -315,7 +315,7 @@ Or is it? Since the change has been decoupled from the values, we can subclass t
 
 But what if we only want to show the navigation item’s prompt when in portrait, and never when in landscape? Should we implement `-navigationItemStateForUserInterfaceOrientation:`?
 
-We could; but then we’d have to make sure that we’re assigning the state manually every time the device’s orientation changes. Then if we decide we also want it to change when some _other_ factor is changed, we’re forced to update it then, too, and carefully ensure that we apply all the relevant rules _every time_. It’s a lot like `-setFrame:` vs. autolayout.
+That might be a start; but we’d still have to make sure that we’re assigning the state manually every time the device’s orientation changes. Then if we decide we also want it to change when some _other_ factor is changed, we’re forced to update it then, too, and carefully ensure that we apply all the relevant rules _every time_. Oh, and that it all happens on the main thread, if that’s a concern for any of our state transitions! It’s a lot like `-setFrame:` vs. autolayout.
 
 Strike that: it’s _exactly_ like `-setFrame:` vs. autolayout.
 
@@ -326,9 +326,13 @@ We further need to encode _when_ the state changes, i.e. in response to changes 
 When you put this all together, you have something like KVO. No wait, ReactiveCocoa! Or maybe Cocoa Bindings? Or maybe just a `Memo` object:
 
     @interface Memo : NSObject
+    
     -(instancetype)initWithBlock:(id(^)())block;
+    
     -(void)addDependencyWithObject:(id)dependency keyPath:(NSString *)keyPath;
+    
     @property (readonly) id value;
+    
     @end
 
 When you create a `Memo`, you give it a block that it should call when any of its dependencies is changed.
@@ -351,8 +355,7 @@ While it doesn’t cover everything, this minimal representation _is_ sufficient
     }
 
     -(void)viewDidLoad {
-    	Memo *memo = self.navigationItemStateMemo;
-    	memo = [[Memo alloc] initWithBlock:^{
+    	Memo *memo = [[Memo alloc] initWithBlock:^{
     		NSDictionary *state = self.navigationItemState;
     		self.navigationItem.title = state[@"title"];
     		self.navigationItem.prompt = state[@"prompt"];
@@ -363,11 +366,13 @@ While it doesn’t cover everything, this minimal representation _is_ sufficient
 
 But if you try this, it doesn’t work. What’s wrong? Memos as described above are lazy, but since we’re never using the memo’s value, it’s never being calculated. Once again, the impedance mismatch between imperative and declarative styles rears its ugly head.
 
-If we want to bridge the gap, we could allow _strict_, also known as _greedy_ evaluation, forcing the value to be updated as soon as it is invalidated. We’ll leave that as an exercise for the audience; but it’s useful to realize that this is, again, a problem where imperative code forces us to think overmuch about ordering. Pushing this imperative code to the margins will help the rest of your code be cleaner, easier to reason about, but you can never root it out completely, and it taints anything which calls it.
+One way to bridge the gap would be to implement _strict_, or _greedy_ evaluation, forcing the value to be updated as soon as it is invalidated. (I’ll leave that as an exercise for the audience.) But taking a step back, it’s useful to realize that this is, again, a problem where imperative code forces us to care about ordering. Pushing this imperative code to the margins will help the rest of your code be cleaner, easier to reason about; but you can never root it out completely. It taints anything which calls it.
 
-On the other hand, if we were always using the value of the memo at all the right times, for example if internally `UIViewController` was using a `Memo` to check our `navigationItemState` memo for updates—because of course its `value` is KVO-compliant!—we would see exactly the desired behaviour. The problems with ordering and timing would be gone gone.
+On the other hand, if we were always using the value of the memo at all the right times, for example if internally `UIViewController` was using some mechanism to observe changes to our memo for updates—because of course every `Memo`’s `value` is KVO-compliant!—we would see exactly the desired behaviour. The problems with ordering and timing would disappear.
 
-The `Memo` we employ is acting in a role that functional reactive programming calls a sink, as opposed to a signal; where a signal acts solely to calculate a value in response to changes, a sink tracks the changes and causes imperative effects. Can we push the imperative effects further into the margins?
+In fact, the way we use `Memo` above is acting in a role that a reactive programming glossary might refer to as a sink. While `Memo` is _capable_ of acting as what’s called a signal, which responds to changes in its dependencies by computing new values on demand, it’s being used here solely to update the navigation item imperatively in response to changes. Again, we don’t use its value, so we don’t run its block. Conflating the imperative _how_ this memo computes with the declarative _what_ this memo represents has caused this bug. Worse, it’s caused us to consider complicating the abstraction with a different evaluation scheme in order to fix it. Perhaps we don’t need to change it at all.
+
+Where a signal is declarative, producing new values when necessary and demanded of it, a sink is imperative, performing some imperative side effects as soon as it’s invalidated. Can we push these imperative effects further into the margins? `Memo` takes us from change to value; maybe we need an abstraction to take us from change to effect. Let’s call it a `Sink`.
 
     @interface Sink : NSObject
     
@@ -377,7 +382,30 @@ The `Memo` we employ is acting in a role that functional reactive programming ca
     
     @end
 
-There are strong similarities with `Memo`, and maybe now would be a good time to start thinking about 
+There are strong similarities with `Memo`, and maybe we should think about abstracting the dependency handling out; but for the moment let’s assume that this is someone else’s problem. Instead of adding greedy evaluation to `Memo`, we’ll add a `Sink` which just calls a block when its dependencies invalidate it; no value will be returned, since we don’t need one to call the imperative code.
+
+    -(void)viewDidLoad {
+    	UIApplication *app = [UIApplication sharedApplication];
+    	UIInterfaceOrientation orientation =
+          app.statusBarOrientation;
+    	Memo *memo = [[Memo alloc] initWithBlock:^{
+    		return [self navigationItemStateForOrientation:orientation];
+    	}];
+    	[memo addDependencyWithObject:app keyPath:@"statusBarOrientation"];
+    	
+    	Sink *sink = [[Sink alloc] initWithBlock:^{
+    		NSDictionary *state = memo.value;
+    		self.navigationItem.title = state[@"title"];
+    		self.navigationItem.prompt = state[@"prompt"];
+    	}];
+    	[sink addDependencyWithObject:memo];
+    }
+
+Now, when the status bar orientation changes, `Memo` is invalidated, which in turn immediately invalidates its value and notifies any observers via KVO. This includes the sink, which asks `memo` for its value.
+
+We’ve also now abstracted the orientation into a parameter so that the `-navigationItemState` method doesn’t need to talk about the `UIApplication`
+
+and applies it to the navigation item. As expected, the problems of timing and ordering have gone away.
 
 With those problems goes some knowledge and control. We no longer have concrete knowledge or control of precisely when and how the state is calculated or used. It’s memoized, so it may not be calculated every time it’s used. If it’s lazy, so it may not be calculated when it’s unused. We don’t know how often the memoized value will be requested of us, because that’s coming from some other part of the code—or of some other person’s code.
 
@@ -423,13 +451,13 @@ There is no analogous cost to classes. We may feel like we incur some penalty to
 
 Ergo, more, simpler classes are “better”—in the sense of allowing “more declarative” solutions—than are fewer, more complex classes. And at this scale, we can use lines of code as a rule of thumb: longer classes are probably more complex, and are less likely to be adequately declarative.
 
-The `Memo` class we looked at earlier is fairly minimalistic. We could factor out the observation of dependencies—that’s orthogonal to the core invalidate/evaluate/value concept—but we see diminishing returns at some point; I might sneer at convenience, but ultimately it’s what pays Apple’s bills and mine, and as an API designer, developers are your users, and users are people too!
+The `Memo` class we looked at earlier is fairly minimalistic. We could factor out the observation of dependencies—that’s orthogonal to the core invalidate/evaluate/value concept—but we see diminishing returns at some point; I might sneer at convenience, but ultimately it’s what pays Apple’s bills, and likely ours, and as an API designer, developers are your users, and users are people too!
 
 In the end, you have to ship. Experimenting with these ideas will not help you ship on Monday. Experimenting with these ideas will not help you ship next week. Probably not next month. But three to six months from now, having this experimentation behind you, having experience with these ideas in your repertoire, it absolutely will.
 
-Declarative code is simpler. It’s usually easier to read, in my experience. It’s smaller, it’s easy to get around, it’s more reliable simply because there are fewer moving pieces which could fail.
+Declarative code is simpler. It’s usually easier to read, in my experience. It’s smaller, it’s easy to get around, it’s more reliable simply because there are fewer moving pieces which could fail. On top of all of that, declarative code is immune to race conditions, the single largest issue preventing us from taking better advantage of multicore processors and distributed programming. And it is, without a doubt, the direction that the market is heading in: Apple is, increasingly, implementing declarative abstractions, and using them isn’t enough; we need to be able to write them as well.
 
-Again, it’s important to remember that there is no silver bullet.
+But again, it’s important to remember that there is no silver bullet. You will run into problems along the way:
 
 Declarative code can be slower than the imperative code you might have written—but it can also be faster, since having the structure available at runtime might give you hints about how the objects are used which could help you to automatically organize them in memory for better locality of reference. Compilers do this with the syntax trees they build; that’s approximately what optimizers are. We can do so too.
 
