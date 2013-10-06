@@ -60,16 +60,18 @@ You have to keep track of a lot of things: calling the correct containment metho
 
 If you do all of this ad hoc any time you need to set the child view controller, it quickly becomes an intractable mess strewn across the `-viewDidLoad`, `-viewWillAppear:`, `-viewDidAppear:` and other methods of every view controller we might want to apply this treatment to. Instead, we abstract that into a method:
 
-    -(void)setChild:(UIViewController *)child {
-      [_child willMoveToParentViewController:nil];
-      [_child.view removeFromSuperview];
-    	[_child removeFromParentViewController];
-    	_child = child;
-    	[self addChildViewController:child];
-    	[self.view addSubview:child.view];
-    	child.view.frame = self.view.bounds;
-    	[child didMoveToParentViewController:self];
-    }
+```objc
+-(void)setChild:(UIViewController *)child {
+    [_child willMoveToParentViewController:nil];
+    [_child.view removeFromSuperview];
+    [_child removeFromParentViewController];
+    _child = child;
+    [self addChildViewController:child];
+    [self.view addSubview:child.view];
+    child.view.frame = self.view.bounds;
+    [child didMoveToParentViewController:self];
+}
+```
 
 Is this an abstraction? Sure. It abstracts the act of setting the child. Does what it says on the tin!
 
@@ -85,36 +87,44 @@ But…
 
 Before iOS 7/OS X 10.9, how many of wrote a `-firstObject` method in a category on `NSArray`? What did it look like?
 
-    -(id)firstObject {
-    	return self.count? self[0] : nil;
-    }
+```objc
+-(id)firstObject {
+	return self.count? self[0] : nil;
+}
+```
 
 This is abstraction too, isn’t it? We’ve named something.
 
 Perhaps we wrote this method after getting fed up of writing this out by hand every time we wanted to reason about the first object in an array. We might have been doing this directly, explicitly using the logic long-form:
 
-    -(NSString *)firstName {
-    	NSArray *nameComponents = [self.fullName componentsSeparatedByString:@" "];
-    	return nameComponents.count? nameComponents[0] : nil;
-    }
+```objc
+-(NSString *)firstName {
+	NSArray *nameComponents = [self.fullName componentsSeparatedByString:@" "];
+	return nameComponents.count? nameComponents[0] : nil;
+}
+```
 
 We might also have been doing it indirectly:
 
-    -(void)cycleSubviews {
-    	if (self.view.subviews.count) {
-    		[self.view sendSubviewToBack:self.view.subviews[0]];
-    		[self.view setNeedsLayout];
-    	}
-    }
+```objc
+-(void)cycleSubviews {
+	if (self.view.subviews.count) {
+		[self.view sendSubviewToBack:self.view.subviews[0]];
+		[self.view setNeedsLayout];
+	}
+}
+```
 
 In both cases we’re employing the concept of `-firstObject` even if we haven’t yet named it. Is `-firstObject` an abstraction? Absolutely. And it’s satisfying: it does exactly what you want. You’re not going to have to change it; there’s nothing to tweak. It is as close to perfect as anything we write can be.
 
 What makes this different from `-setChild:`? Is it the parameter? Is it just the length? Is there a shorter example that shows the same contrast with `-firstObject`? Maybe you have a flower shop app and are writing a view controller to enter the destination details:
 
-    -(void)setUpNavigationItem {
-    	self.navigationItem.title = @"Recipient";
-    	self.navigationItem.prompt = @"Where would you like the flowers sent?";
-    }
+```objc
+-(void)setUpNavigationItem {
+	self.navigationItem.title = @"Recipient";
+	self.navigationItem.prompt = @"Where would you like the flowers sent?";
+}
+```
 
 This isn’t unwieldy at all: there’s only two lines of code in this method. It’s trivial. In fact, why would you even write this method? Why would anyone ever write this method, except to make `-viewDidLoad` maybe a couple of lines shorter? It’s ridiculous: we are going to call this all of once, and you’ve actually increased the program’s length by a net three lines of code: one for the declaration of the method, one for the closing brace, and one to call it in `-viewDidLoad`.
 
@@ -143,27 +153,32 @@ This is what happens to you when you stare too long into the `void`.
 
 While `-firstObject` is an abstraction, it can be abstracted further. For example, we could generalize it to return the object at any in-bounds ordinal or nil:
 
-    -(id)nthObject:(NSUInteger)n {
-    	return (self.count > n)? self[n] : nil;
-    }
+```objc
+-(id)nthObject:(NSUInteger)n {
+	return (self.count > n)? self[n] : nil;
+}
+```
 
 Now we can define `-firstObject` in terms of `-nthObject:`:
 
-    -(id)firstObject {
-    	return [self nthObject:0];
-    }
+```objc
+-(id)firstObject {
+   	return [self nthObject:0];
+}
+```
 
 Clearly, `-nthObject:` is more abstract than `-firstObject`: it includes one fewer concrete concept, but can still implement the same behaviour. Can we abstract it further?
 
 One way to identify a potential abstraction is simply to consider some decision that the code in question is making and simply take the result of that decision as a parameter. `-nthObject:` is making several decisions: it decides whether to return a member or nil; it decides to return a specific value in the in-bounds case; and it decides to return a specific value (nil) in the out-of-bounds case. Let’s consider this last one. Extracting it into a parameter, we get:
 
-    -(id)nthObject:(NSUInteger)n default:(id)marker {
-    	return (self.count > n)? self[n] : marker;
-    }
-
-    -(id)nthObject:(NSUInteger)n {
-    	return [self nthObject:n default:nil];
-    }
+```objc
+-(id)nthObject:(NSUInteger)n default:(id)marker {
+	return (self.count > n)? self[n] : marker;
+}
+-(id)nthObject:(NSUInteger)n {
+	return [self nthObject:n default:nil];
+}
+```
 
 This is, again, clearly more abstract: we generalized from the return of nil to the return of some marker value.
 
@@ -187,9 +202,11 @@ There’s an interesting contrast to be drawn between _simplicity_ and _ease_. I
 
 How many concrete concepts does `-firstObject` contain? When I say “concrete” I mean more or less “invariant”—concepts which are part of the contract of the method. Remember, this is, by definition, semantics, so we shouldn’t be afraid of this question just because it’s fuzzy. Let’s count them:
 
-    -(id)firstObject {
-    	return self.count? self[**0**] : **nil**;
-    }
+```objc
+-(id)firstObject {
+	return self.count? self[**0**] : **nil**;
+}
+```
 
 (Notice that I’m using the original definition, before we abstracted it.)
 
@@ -203,9 +220,11 @@ I count (at least) two:
 
 How about `-nthObject:`?
 
-    -(id)nthObject:(NSUInteger)n {
-    	return (self.count > n)? self[n] : nil;
-    }
+```objc
+-(id)nthObject:(NSUInteger)n {
+	return (self.count > n)? self[n] : nil;
+}
+```
 
 Using the same metrics, it looks like only one:
 
@@ -213,21 +232,25 @@ Using the same metrics, it looks like only one:
 
 And `-nthObject:default:`?
 
-    -(id)nthObject:(NSUInteger)n default:(id)marker {
-    	return (self.count > n)? self[n] : marker;
-    }
+```objc
+-(id)nthObject:(NSUInteger)n default:(id)marker {
+	return (self.count > n)? self[n] : marker;
+}
+```
 
 By my count, 0. So it would seem that the more abstract the code, the fewer concrete concepts are involved. And indeed it makes some intuitive sense that abstraction and concreteness would be inversely linked.
 
 Now let’s look at the definitions of `-firstObject` and `-nthObject:` in terms of their more concrete counterparts:
 
-    -(id)firstObject {
-    	return [self nthObject:0];
-    }
+```objc
+-(id)firstObject {
+	return [self nthObject:0];
+}
 
-    -(id)nthObject:(NSUInteger)n {
-    	return [self nthObject:n default:nil];
-    }
+-(id)nthObject:(NSUInteger)n {
+	return [self nthObject:n default:nil];
+}
+```
 
 Looked at through the same lens, each of these definitions has captured only one concrete concept! And _this_ is more than simply semantics: perhaps you noticed that when we defined `-nthObject:default:` and then redefined `-nthObject:` in terms of it, we didn’t need to change `-firstObject` at all! It stayed exactly the same.
 
@@ -251,10 +274,12 @@ The _apparent_ simplicity of `-setFrame:`—really its ease—doesn’t scale. W
 
 This sheds new light on `-setUpNavigationItem`. How many concrete concepts does it involve?
 
-    -(void)setUpNavigationItem {
-    	self.navigationItem.title = @"Recipient";
-    	self.navigationItem.prompt = @"Where would you like the flowers sent?";
-    }
+```objc
+-(void)setUpNavigationItem {
+	self.navigationItem.title = @"Recipient";
+	self.navigationItem.prompt = @"Where would you like the flowers sent?";
+}
+```
 
 Multiple choice:
 
@@ -286,7 +311,9 @@ While Objective-C is an imperative language, we can view this as meaning that it
 
 First off, it would have to have a return value; it’s not an abstraction if it doesn’t exist. Since this is just a second approximation, let’s just return a dictionary:
 
-    -(NSDictionary *)
+```objc
+-(NSDictionary *)
+```
 
 Wait a minute! Immediately we hit a wall. What do we call it? We’re basically describing how a `UINavigationItem` should be configured, but we can’t just call it `-navigationItem` and return a `UINavigationItem *` instead of a dictionary, can we? And even if we did, aren’t we just going to be calling setters on that, thus incurring more complexity?
 
@@ -296,18 +323,22 @@ To the second question: If state is mutated in the forest and no one is around t
 
 In the meantime, we’ll still just return a dictionary from this method; let’s call it `-navigationItemState`:
 
-    -(NSDictionary *)navigationItemState {
-    	return @{ @"title": @"Recipient",
-    	         @"prompt": @"Where would you like the flowers sent?" };
-    }
+```objc
+-(NSDictionary *)navigationItemState {
+	return @{ @"title": @"Recipient",
+	         @"prompt": @"Where would you like the flowers sent?" };
+}
+```
 
 Now we have only the complexity of the values, not of the changes as well. But surely this is hand-waving: this doesn’t assign anything to the `navigationItem`; it’s just moved the problem elsewhere!
 
 Indeed it has. The sad truth is that `UIViewController`’s API is not a particularly declarative one; we’re on our own for this one. Alright then, what does it look like to assign this, perhaps in `-viewDidLoad`?
 
-    NSDictionary *state = self.navigationItemState;
-    self.navigationItem.title = state[@"title"];
-    self.navigationItem.prompt = state[@"prompt"];
+```objc
+NSDictionary *state = self.navigationItemState;
+self.navigationItem.title = state[@"title"];
+self.navigationItem.prompt = state[@"prompt"];
+```
 
 Now I _know_ it’s just hand-waving: that’s exactly the kind of assignment we were trying to avoid!
 
@@ -325,15 +356,17 @@ We further need to encode _when_ the state changes, i.e. in response to changes 
 
 When you put this all together, you have something like KVO. No wait, ReactiveCocoa! Or maybe Cocoa Bindings? Or maybe just a `Memo` object:
 
-    @interface Memo : NSObject
+```objc
+@interface Memo : NSObject
     
-    -(instancetype)initWithBlock:(id(^)())block;
+-(instancetype)initWithBlock:(id(^)())block;
     
-    -(void)addDependencyWithObject:(id)dependency keyPath:(NSString *)keyPath;
+-(void)addDependencyWithObject:(id)dependency keyPath:(NSString *)keyPath;
     
-    @property (readonly) id value;
+@property (readonly) id value;
     
-    @end
+@end
+```
 
 When you create a `Memo`, you give it a block that it should call when any of its dependencies is changed.
 
@@ -347,22 +380,24 @@ This is not sufficient to cover the gamut of responses to state changes! It is p
 
 While it doesn’t cover everything, this minimal representation _is_ sufficient to handle changes to the notification item’s state in response to changes in orientation:
 
-    -(NSDictionary *)navigationItemState {
-    	return UIInterfaceOrientationIsPortrait([UIApplication sharedApplication].statusBarOrientation)?
-    		@{ @"title": @"Recipient",
-    	    @"prompt": @"Where would you like the flowers sent?" }
-    	:	@{ @"title": @"Recipient" };
-    }
+```objc
+-(NSDictionary *)navigationItemState {
+   	return UIInterfaceOrientationIsPortrait([UIApplication sharedApplication].statusBarOrientation)?
+   		@{ @"title": @"Recipient",
+   	    @"prompt": @"Where would you like the flowers sent?" }
+   	:	@{ @"title": @"Recipient" };
+}
 
-    -(void)viewDidLoad {
-    	Memo *memo = [[Memo alloc] initWithBlock:^{
-    		NSDictionary *state = self.navigationItemState;
-    		self.navigationItem.title = state[@"title"];
-    		self.navigationItem.prompt = state[@"prompt"];
-    		return state;
-    	}];
-    	[memo addDependencyWithObject:[UIApplication sharedApplication] keyPath:@"statusBarOrientation"];
-    }
+ -(void)viewDidLoad {
+    Memo *memo = [[Memo alloc] initWithBlock:^{
+    	NSDictionary *state = self.navigationItemState;
+    	self.navigationItem.title = state[@"title"];
+    	self.navigationItem.prompt = state[@"prompt"];
+    	return state;
+    }];
+    [memo addDependencyWithObject:[UIApplication sharedApplication] keyPath:@"statusBarOrientation"];
+}
+```
 
 But if you try this, it doesn’t work. What’s wrong? Memos as described above are lazy, but since we’re never using the memo’s value, it’s never being calculated. Once again, the impedance mismatch between imperative and declarative styles rears its ugly head.
 
@@ -374,32 +409,35 @@ In fact, the way we use `Memo` above is acting in a role that a reactive program
 
 Where a signal is declarative, producing new values when necessary and demanded of it, a sink is imperative, performing some imperative side effects as soon as it’s invalidated. Can we push these imperative effects further into the margins? `Memo` takes us from change to value; maybe we need an abstraction to take us from change to effect. Let’s call it a `Sink`.
 
-    @interface Sink : NSObject
+```objc
+@interface Sink : NSObject
     
-    -(instancetype)initWithBlock:(void(^)())block;
+-(instancetype)initWithBlock:(void(^)())block;
     
-    -(void)addDependencyWithObject:(id)dependency keyPath:(NSString *)keyPath;
+-(void)addDependencyWithObject:(id)dependency keyPath:(NSString *)keyPath;
     
-    @end
+@end
+```
 
 There are strong similarities with `Memo`, and maybe we should think about abstracting the dependency handling out; but for the moment let’s assume that this is someone else’s problem. Instead of adding greedy evaluation to `Memo`, we’ll add a `Sink` which just calls a block when its dependencies invalidate it; no value will be returned, since we don’t need one to call the imperative code.
 
-    -(void)viewDidLoad {
-    	UIApplication *app = [UIApplication sharedApplication];
-    	UIInterfaceOrientation orientation =
-          app.statusBarOrientation;
-    	Memo *memo = [[Memo alloc] initWithBlock:^{
-    		return [self navigationItemStateForOrientation:orientation];
-    	}];
-    	[memo addDependencyWithObject:app keyPath:@"statusBarOrientation"];
+```objc
+-(void)viewDidLoad {
+	UIApplication *app = [UIApplication sharedApplication];
+	UIInterfaceOrientation orientation = app.statusBarOrientation;
+	Memo *memo = [[Memo alloc] initWithBlock:^{
+		return [self navigationItemStateForOrientation:orientation];
+	}];
+	[memo addDependencyWithObject:app keyPath:@"statusBarOrientation"];
     	
-    	Sink *sink = [[Sink alloc] initWithBlock:^{
-    		NSDictionary *state = memo.value;
-    		self.navigationItem.title = state[@"title"];
-    		self.navigationItem.prompt = state[@"prompt"];
-    	}];
-    	[sink addDependencyWithObject:memo keyPath:value];
-    }
+	Sink *sink = [[Sink alloc] initWithBlock:^{
+		NSDictionary *state = memo.value;
+		self.navigationItem.title = state[@"title"];
+		self.navigationItem.prompt = state[@"prompt"];
+    }];
+    [sink addDependencyWithObject:memo keyPath:value];
+}
+```
 
 Now, when the status bar orientation changes, `Memo` is invalidated, which in turn immediately invalidates its value and notifies any observers via KVO. This triggers the sink to run its block and ask `memo` for its value, and when it does so, `memo` is evaluated.
 
