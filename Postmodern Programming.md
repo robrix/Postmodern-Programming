@@ -326,7 +326,7 @@ In the meantime, we’ll still just return a dictionary from this method; let’
 ```objc
 -(NSDictionary *)navigationItemState {
 	return @{ @"title": @"Recipient",
-	         @"prompt": @"Where would you like the flowers sent?" };
+	          @"prompt": @"Where would you like the flowers sent?" };
 }
 ```
 
