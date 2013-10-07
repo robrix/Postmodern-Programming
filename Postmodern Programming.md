@@ -384,7 +384,7 @@ While it doesn’t cover everything, this minimal representation _is_ sufficient
 -(NSDictionary *)navigationItemState {
    	return UIInterfaceOrientationIsPortrait([UIApplication sharedApplication].statusBarOrientation)?
    		@{ @"title": @"Recipient",
-   	    @"prompt": @"Where would you like the flowers sent?" }
+   		   @"prompt": @"Where would you like the flowers sent?" }
    	:	@{ @"title": @"Recipient" };
 }
 
