@@ -435,7 +435,7 @@ There are strong similarities with `Memo`, and maybe we should think about abstr
 		self.navigationItem.title = state[@"title"];
 		self.navigationItem.prompt = state[@"prompt"];
     }];
-    [sink addDependencyWithObject:memo keyPath:value];
+    [sink addDependencyWithObject:memo keyPath:@"value"];
 }
 ```
 
