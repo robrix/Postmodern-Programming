@@ -424,8 +424,8 @@ There are strong similarities with `Memo`, and maybe we should think about abstr
 ```objc
 -(void)viewDidLoad {
 	UIApplication *app = [UIApplication sharedApplication];
-	UIInterfaceOrientation orientation = app.statusBarOrientation;
 	Memo *memo = [[Memo alloc] initWithBlock:^{
+		UIInterfaceOrientation orientation = app.statusBarOrientation;
 		return [self navigationItemStateForOrientation:orientation];
 	}];
 	[memo addDependencyWithObject:app keyPath:@"statusBarOrientation"];
